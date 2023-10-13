@@ -1,9 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
-	"slices"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -12,11 +13,11 @@ var supportOperations = []string{"+", "-", "/", "*"}
 var supportRomans = []string{"I", "V", "X", "L", "C", "D", "M"}
 
 func main() {
-	//reader := bufio.NewReader(os.Stdin)
-	//input, _ := reader.ReadString('\n')
-	//input = strings.ReplaceAll(input, "\n", "")
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.ReplaceAll(input, "\n", "")
 
-	parse("I + II")
+	parse(input)
 }
 
 func parse(input string) {
@@ -25,35 +26,25 @@ func parse(input string) {
 		panic(err)
 	}
 
-	if isRoman(firstArgumentsStr) {
-		if isRoman(secondArgumentStr) {
-			// first and second is roman
+	firstArgument, secondArgument, isRoman := parseArguments(firstArgumentsStr, secondArgumentStr)
 
-		} else {
-			panic("second arguments is not roman")
+	if firstArgument < 1 || firstArgument > 10 || secondArgument < 1 || secondArgument > 10 {
+		panic("numbers greater than 10 or less than 1")
+	}
+
+	result, err := calculate(firstArgument, secondArgument, operation)
+	if err != nil {
+		panic(err)
+	}
+
+	if isRoman {
+		if result < 1 {
+			panic("result cannot be negative in roman")
 		}
+		fmt.Println(intToRoman(result))
+	} else {
+		fmt.Println(result)
 	}
-
-	if isRoman(secondArgumentStr) {
-		panic("first arguments is not arabic")
-	}
-
-	firstArguments, err := strconv.Atoi(firstArgumentsStr)
-	if err != nil {
-		panic(err)
-	}
-
-	secondArgument, err := strconv.Atoi(secondArgumentStr)
-	if err != nil {
-		panic(err)
-	}
-
-	result, err := calculate(firstArguments, secondArgument, operation)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(result)
 }
 
 func calculate(a int, b int, operation string) (int, error) {
@@ -83,8 +74,40 @@ func findArguments(input string) (string, string, string, error) {
 	return "", "", "", errors.New("syntax error")
 }
 
+func parseArguments(first string, second string) (int, int, bool) {
+	if isRoman(first) {
+		if isRoman(second) {
+			return romanToInt(first), romanToInt(second), true
+		} else {
+			panic("second arguments is not roman")
+		}
+	}
+
+	if isRoman(second) {
+		panic("first arguments is not arabic")
+	}
+
+	firstArguments, err := strconv.Atoi(first)
+	if err != nil {
+		panic(err)
+	}
+
+	secondArgument, err := strconv.Atoi(second)
+	if err != nil {
+		panic(err)
+	}
+
+	return firstArguments, secondArgument, false
+}
+
 func isRoman(symbol string) bool {
-	return slices.Contains(supportRomans, symbol)
+	for _, roman := range supportRomans {
+		if strings.Contains(symbol, roman) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func romanToInt(s string) int {
@@ -112,7 +135,7 @@ func romanToInt(s string) int {
 	return sum
 }
 
-func integerToRoman(number int) string {
+func intToRoman(number int) string {
 	maxRomanNumber := 3999
 	if number > maxRomanNumber {
 		return strconv.Itoa(number)
